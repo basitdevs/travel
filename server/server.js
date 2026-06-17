@@ -46,7 +46,13 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res, next) => {
+  try {
+    await connectDB();
+  } catch (error) {
+    return next(error);
+  }
+
   res.json({
     status: 'ok',
     message: 'Travel Agency API is running',
