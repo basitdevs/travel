@@ -20,6 +20,19 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 const isVercel = process.env.VERCEL === '1';
 
+const normalizeOrigin = (origin) => {
+  const clean = origin.trim().replace(/\/+$/, '');
+  if (!clean) return [];
+  if (/^https?:\/\//i.test(clean)) return [clean];
+  return [`https://${clean}`, `http://${clean}`];
+};
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  ...String(process.env.CLIENT_URL || '').split(',').flatMap(normalizeOrigin),
+];
+
 const ensureDatabase = async (req, res, next) => {
   try {
     await connectDB();
@@ -31,7 +44,12 @@ const ensureDatabase = async (req, res, next) => {
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Not allowed by CORS: ${origin}`));
+    },
     credentials: true,
   })
 );
