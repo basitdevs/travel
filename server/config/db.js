@@ -1,23 +1,27 @@
 import mongoose from 'mongoose';
 
+let connectionPromise;
+
 const connectDB = async () => {
   const uri = process.env.MONGODB_URI;
 
   if (!uri) {
-    console.error('Error: MONGODB_URI is not defined in .env file');
-    process.exit(1);
+    throw new Error('MONGODB_URI is not defined');
+  }
+
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
   }
 
   try {
-    const conn = await mongoose.connect(uri);
+    connectionPromise ||= mongoose.connect(uri);
+    const conn = await connectionPromise;
     const dbName = conn.connection.name;
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-    console.log(`Database: ${dbName}`);
+    console.log(`MongoDB Connected: ${conn.connection.host} (${dbName})`);
     return conn;
   } catch (error) {
-    console.error(`MongoDB Connection Error: ${error.message}`);
-    console.error('Make sure MongoDB is running (mongod) and MONGODB_URI is correct.');
-    process.exit(1);
+    connectionPromise = null;
+    throw error;
   }
 };
 

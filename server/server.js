@@ -18,6 +18,16 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+const isVercel = process.env.VERCEL === '1';
+
+const ensureDatabase = async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 
 app.use(
   cors({
@@ -44,6 +54,8 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+app.use('/api', ensureDatabase);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -92,4 +104,11 @@ const startServer = async () => {
   process.on('SIGINT', () => shutdown('SIGINT'));
 };
 
-startServer();
+if (!isVercel) {
+  startServer().catch((error) => {
+    console.error('Server startup error:', error.message);
+    process.exit(1);
+  });
+}
+
+export default app;
