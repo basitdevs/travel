@@ -20,7 +20,7 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 const isVercel = process.env.VERCEL === '1';
 
-const normalizeOrigin = (origin) => {
+export const normalizeOrigin = (origin) => {
   const clean = origin.trim().replace(/\/+$/, '');
   if (!clean) return [];
   if (/^https?:\/\//i.test(clean)) return [clean];
